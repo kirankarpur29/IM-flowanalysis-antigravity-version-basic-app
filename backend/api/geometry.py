@@ -40,8 +40,17 @@ def safe_convert_step_to_stl(input_path: str, output_path: str):
             gmsh.initialize()
         
         gmsh.clear()
+        
+        # Optimize for Low Memory / Render Free Tier
+        gmsh.option.setNumber("General.NumThreads", 1)  # Avoid thread overhead
+        gmsh.option.setNumber("Mesh.Algorithm", 6)      # Frontal-Delaunay 2D (Usually efficient)
+        gmsh.option.setNumber("General.Terminal", 1)    # Log output
+        
         gmsh.open(input_path)
         gmsh.model.mesh.generate(2)
+        
+        # Write Binary STL (Faster, smaller)
+        gmsh.option.setNumber("Mesh.Binary", 1)
         gmsh.write(output_path)
     except Exception as e:
         logger.error(f"GMSH Conversion Failed: {e}")
@@ -49,7 +58,8 @@ def safe_convert_step_to_stl(input_path: str, output_path: str):
            if gmsh.is_initialized():
                 gmsh.finalize()
         except: pass
-        raise HTTPException(status_code=500, detail=f"Geometry conversion failed: {str(e)}")
+        # Provide specific user feedback
+        raise HTTPException(status_code=422, detail=f"Geometry conversion failed (Likely Memory Limit). Try a smaller file or STL. Internal: {str(e)}")
     finally:
         # Proper cleanup if needed, though finalize might block re-init on some setups. 
         # Keeping open is often safer in single-process, but here we finalize to be clean.
@@ -62,14 +72,14 @@ def safe_convert_step_to_stl(input_path: str, output_path: str):
 async def upload_geometry(file: UploadFile = File(...)):
     logger.info(f"Received file upload: {file.filename}")
     
-    # Max upload size: 25MB (Safety for free tier RAM)
-    MAX_FILE_SIZE_MB = 25
+    # Max upload size: 15MB (Strict safety for free tier RAM during meshing)
+    MAX_FILE_SIZE_MB = 15
     file.file.seek(0, 2)
     file_size = file.file.tell()
     file.file.seek(0)
     
     if file_size > MAX_FILE_SIZE_MB * 1024 * 1024:
-            raise HTTPException(status_code=413, detail=f"File too large. Max size {MAX_FILE_SIZE_MB}MB for free tier.")
+            raise HTTPException(status_code=413, detail=f"File too large ({file_size/1024/1024:.1f}MB). Max size {MAX_FILE_SIZE_MB}MB for Free Tier.")
 
     # Use TemporaryDirectory for automatic cleanup
     with tempfile.TemporaryDirectory() as temp_dir:

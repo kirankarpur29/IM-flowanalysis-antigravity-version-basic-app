@@ -40,5 +40,8 @@ COPY . .
 # Expose port (Render sets $PORT env var, but good practice)
 EXPOSE 8000
 
+# Grant permissions (Fixes SQLite "attempt to write a readonly database" zombie)
+RUN chmod -R 777 /app
+
 # Run the application
 CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
