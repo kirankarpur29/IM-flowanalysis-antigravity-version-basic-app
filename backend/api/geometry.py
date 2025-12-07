@@ -58,16 +58,16 @@ async def upload_geometry(file: UploadFile = File(...)):
     logger.info(f"Received file upload: {file.filename}")
     
     # Max upload size: 25MB (Safety for free tier RAM)
-        MAX_FILE_SIZE_MB = 25
-        file.file.seek(0, 2)
-        file_size = file.file.tell()
-        file.file.seek(0)
-        
-        if file_size > MAX_FILE_SIZE_MB * 1024 * 1024:
-             raise HTTPException(status_code=413, detail=f"File too large. Max size {MAX_FILE_SIZE_MB}MB for free tier.")
+    MAX_FILE_SIZE_MB = 25
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    
+    if file_size > MAX_FILE_SIZE_MB * 1024 * 1024:
+            raise HTTPException(status_code=413, detail=f"File too large. Max size {MAX_FILE_SIZE_MB}MB for free tier.")
 
-        # Use TemporaryDirectory for automatic cleanup
-        with tempfile.TemporaryDirectory() as temp_dir:
+    # Use TemporaryDirectory for automatic cleanup
+    with tempfile.TemporaryDirectory() as temp_dir:
         file_path = os.path.join(temp_dir, file.filename)
         
         # Save uploaded file safely
