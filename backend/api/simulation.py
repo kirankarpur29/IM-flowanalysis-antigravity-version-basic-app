@@ -61,11 +61,9 @@ def calculate_cooling_time(thickness_mm: float, material: Material, melt_temp: f
 
 @router.post("/run", response_model=SimulationResult)
 def run_simulation(input_data: SimulationInput, session: Session = Depends(get_session)):
-    print(f"DEBUG: Simulation Request: {input_data}")
     # 1. Fetch Material
     material = session.get(Material, input_data.material_id)
     if not material:
-        print(f"DEBUG: Material not found for ID {input_data.material_id}")
         raise HTTPException(status_code=404, detail="Material not found")
         
     # 2. Determine Process Parameters
