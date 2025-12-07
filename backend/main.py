@@ -7,9 +7,18 @@ from backend import models # Import models to register them with SQLModel
 from fastapi.staticfiles import StaticFiles
 import os
 
+from backend.database import create_db_and_tables, engine
+from backend import preload_data
+from sqlmodel import Session
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+    # Auto-seed database on startup
+    with Session(engine) as session:
+        preload_data.create_materials(session)
+        preload_data.create_machines(session)
+        session.commit()
     yield
 
 app = FastAPI(title="Mold Flow Analysis API", version="0.1.0", lifespan=lifespan)
