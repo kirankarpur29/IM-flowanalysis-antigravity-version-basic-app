@@ -12,8 +12,8 @@ WORKDIR /app
 # Install system dependencies (The "Heavy Things")
 # libgl1-mesa-glx, libglu1-mesa: Required for GMSH/CAD conversion
 # libpango-1.0-0, libcairo2: Required for WeasyPrint (PDFs)
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
     libglu1-mesa \
     libxrender1 \
     libxcursor1 \
