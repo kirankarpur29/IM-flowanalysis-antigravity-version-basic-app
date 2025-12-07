@@ -1,15 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from backend.database import create_db_and_tables
-from backend.api import materials, machines, geometry, simulation, reports, projects
-from backend import models # Import models to register them with SQLModel
 from fastapi.staticfiles import StaticFiles
 import os
+from sqlmodel import Session
 
 from backend.database import create_db_and_tables, engine
-from backend import preload_data
-from sqlmodel import Session
+from backend.api import materials, machines, geometry, simulation, reports, projects
+from backend import models, preload_data
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
