@@ -13,6 +13,7 @@ WORKDIR /app
 # libgl1-mesa-glx, libglu1-mesa: Required for GMSH/CAD conversion
 # libpango-1.0-0, libcairo2: Required for WeasyPrint (PDFs)
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     libgl1 \
     libglu1-mesa \
     libxrender1 \
@@ -20,7 +21,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxft2 \
     libxinerama1 \
     libpango-1.0-0 \
+    libpangocairo-1.0-0 \
     libpangoft2-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    shared-mime-info \
     libcairo2 \
     && rm -rf /var/lib/apt/lists/*
 
