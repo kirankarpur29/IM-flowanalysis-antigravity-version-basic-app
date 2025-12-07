@@ -1,6 +1,5 @@
-# Use an official Python runtime as a parent image
-# 3.10-slim is smaller and secure
-FROM python:3.10-slim
+# Use Debian 11 (Bullseye) for maximum package compatibility
+FROM python:3.10-slim-bullseye
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -9,12 +8,10 @@ ENV PYTHONUNBUFFERED=1
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies (The "Heavy Things")
-# libgl1-mesa-glx, libglu1-mesa: Required for GMSH/CAD conversion
-# libpango-1.0-0, libcairo2: Required for WeasyPrint (PDFs)
+# Install system dependencies (Debian 11 Stable List)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libgl1 \
+    libgl1-mesa-glx \
     libglu1-mesa \
     libxrender1 \
     libxcursor1 \
