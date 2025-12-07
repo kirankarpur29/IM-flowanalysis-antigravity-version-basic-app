@@ -28,7 +28,7 @@ router = APIRouter(prefix="/geometry", tags=["geometry"])
 def safe_convert_step_to_stl(input_path: str, output_path: str):
     """Safely converts STEP to STL using GMSH."""
     if not GMSH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Server missing GMSH libraries (libGLU). Cannot convert STEP files.")
+        raise HTTPException(status_code=503, detail="STEP conversion unavailable on free cloud tier. Please export your model as .STL and upload again.")
 
     try:
         if not gmsh.is_initialized():

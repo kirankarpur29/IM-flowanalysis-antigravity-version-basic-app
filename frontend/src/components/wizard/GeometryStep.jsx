@@ -55,7 +55,8 @@ const GeometryStep = ({
                                 <Upload size={24} />
                             </div>
                             <p className="text-sm font-semibold text-slate-700">Click to Upload Model</p>
-                            <p className="text-xs text-slate-400 mt-1">Supports .STL and .STEP</p>
+                            <p className="text-xs text-slate-400 mt-1">Supports .STL (Recommended)</p>
+                            <p className="text-[10px] text-orange-400 mt-1">(.STEP supported on Local/Pro servers only)</p>
                         </>
                     )}
                 </div>
