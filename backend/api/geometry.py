@@ -28,7 +28,12 @@ router = APIRouter(prefix="/geometry", tags=["geometry"])
 def safe_convert_step_to_stl(input_path: str, output_path: str):
     """Safely converts STEP to STL using GMSH."""
     if not GMSH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="STEP conversion unavailable on free cloud tier. Please export your model as .STL and upload again.")
+        # Retry import in case it was a transient load issue (Docker should have it)
+        try:
+            import gmsh
+            GMSH_AVAILABLE = True
+        except:
+             raise HTTPException(status_code=503, detail="Server missing GMSH libraries. If on Free Tier, switch to Docker Runtime.")
 
     try:
         if not gmsh.is_initialized():
