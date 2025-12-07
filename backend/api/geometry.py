@@ -4,7 +4,17 @@ import shutil
 import logging
 from fastapi import APIRouter, UploadFile, File, HTTPException
 import trimesh
-import gmsh
+try:
+    import gmsh
+    GMSH_AVAILABLE = True
+except OSError as e:
+    # Render or environment missing libGLU
+    logging.warning(f"GMSH import failed (likely missing libGLU): {e}. STEP conversion disabled.")
+    GMSH_AVAILABLE = False
+except ImportError as e:
+    logging.warning(f"GMSH not installed: {e}. STEP conversion disabled.")
+    GMSH_AVAILABLE = False
+
 from pydantic import BaseModel
 import numpy as np
 import uuid
@@ -17,6 +27,9 @@ router = APIRouter(prefix="/geometry", tags=["geometry"])
 
 def safe_convert_step_to_stl(input_path: str, output_path: str):
     """Safely converts STEP to STL using GMSH."""
+    if not GMSH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Server missing GMSH libraries (libGLU). Cannot convert STEP files.")
+
     try:
         if not gmsh.is_initialized():
             gmsh.initialize()
@@ -27,10 +40,18 @@ def safe_convert_step_to_stl(input_path: str, output_path: str):
         gmsh.write(output_path)
     except Exception as e:
         logger.error(f"GMSH Conversion Failed: {e}")
+        try:
+           if gmsh.is_initialized():
+                gmsh.finalize()
+        except: pass
         raise HTTPException(status_code=500, detail=f"Geometry conversion failed: {str(e)}")
     finally:
-        if gmsh.is_initialized():
-            gmsh.finalize()
+        # Proper cleanup if needed, though finalize might block re-init on some setups. 
+        # Keeping open is often safer in single-process, but here we finalize to be clean.
+        try:
+           if gmsh.is_initialized():
+                gmsh.finalize()
+        except: pass
 
 @router.post("/upload")
 async def upload_geometry(file: UploadFile = File(...)):
