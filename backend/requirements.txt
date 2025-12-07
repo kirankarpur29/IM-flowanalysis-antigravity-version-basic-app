@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+sqlmodel
+numpy
+scipy
+weasyprint
+python-multipart
+jinja2
+trimesh
+gmsh

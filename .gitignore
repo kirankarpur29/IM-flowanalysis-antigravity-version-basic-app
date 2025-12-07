@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dynamic/Generated
+static/model_*.stl
+static/rotated_*.stl
+mold-flow.db
+*.pdf
+
+# Editor
+.vscode/
+.idea/
