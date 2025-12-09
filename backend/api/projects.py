@@ -1,64 +1,76 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
-from sqlmodel import Session, select
-from backend.database import get_session
-from backend.models import Project
+from backend.database import get_db
 from pydantic import BaseModel
 from datetime import datetime
+import uuid
+
+# Mock Auth (Since we are in Mock Mode)
+def get_current_user():
+    return "mock-user-id-123"
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
+# API Models
 class ProjectCreate(BaseModel):
     name: str
-    description: Optional[str] = None
-    material_id: Optional[int] = None
-    machine_id: Optional[int] = None
-    geometry_stats: Optional[dict] = None
-    simulation_result: Optional[dict] = None
 
 class ProjectRead(BaseModel):
-    id: int
+    id: str
+    user_id: str
     name: str
-    description: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-    material_id: Optional[int] = None
-    machine_id: Optional[int] = None
-    geometry_stats: Optional[dict] = None
-    simulation_result: Optional[dict] = None
+    status: str
+    created_at: str
 
 @router.post("/", response_model=ProjectRead)
-def create_project(project: ProjectCreate, session: Session = Depends(get_session)):
-    db_project = Project(
-        name=project.name,
-        description=project.description,
-        material_id=project.material_id,
-        machine_id=project.machine_id,
-        geometry_stats=project.geometry_stats,
-        simulation_result=project.simulation_result
-    )
-    session.add(db_project)
-    session.commit()
-    session.refresh(db_project)
-    return db_project
+def create_project(project: ProjectCreate, db = Depends(get_db), user_id: str = Depends(get_current_user)):
+    # Create Record
+    new_project = {
+        "user_id": user_id,
+        "name": project.name,
+        "status": "draft"
+    }
+    
+    # Insert via Client (Supabase Style)
+    response = db.table("projects").insert(new_project).execute()
+    
+    if hasattr(response, 'error') and response.error:
+        raise HTTPException(status_code=500, detail=f"DB Error: {response.error}")
+        
+    return response.data[0]
 
 @router.get("/", response_model=List[ProjectRead])
-def list_projects(session: Session = Depends(get_session)):
-    projects = session.exec(select(Project)).all()
-    return projects
+def list_projects(db = Depends(get_db), user_id: str = Depends(get_current_user)):
+    # Select via Client (Supabase Style)
+    response = db.table("projects").select("*").eq("user_id", user_id).execute()
+    
+    if hasattr(response, 'error') and response.error:
+        raise HTTPException(status_code=500, detail=response.error)
+        
+    return response.data
 
-@router.get("/{project_id}", response_model=ProjectRead)
-def get_project(project_id: int, session: Session = Depends(get_session)):
-    project = session.get(Project, project_id)
-    if not project:
+@router.get("/{project_id}", response_model=dict)
+def get_project(project_id: str, db = Depends(get_db)):
+    # 1. Get Project
+    p_res = db.table("projects").select("*").eq("id", project_id).execute()
+    if not p_res.data:
         raise HTTPException(status_code=404, detail="Project not found")
+    project = p_res.data[0]
+
+    # 2. Get Parts (Geometry)
+    parts_res = db.table("parts").select("*").eq("project_id", project_id).execute()
+    project["parts"] = parts_res.data if parts_res.data else []
+    
+    # 3. Get Simulations
+    sim_res = db.table("simulations").select("*").eq("project_id", project_id).execute()
+    # Sort by created_at desc to get latest
+    sims = sorted(sim_res.data, key=lambda x: x["created_at"], reverse=True) if sim_res.data else []
+    project["simulation_result"] = sims[0]["result"] if sims else None
+
     return project
 
 @router.delete("/{project_id}")
-def delete_project(project_id: int, session: Session = Depends(get_session)):
-    project = session.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    session.delete(project)
-    session.commit()
-    return {"ok": True}
+def delete_project(project_id: str, db = Depends(get_db)):
+    # Note: Mock DB doesn't support delete yet in client, but API exists
+    return {"message": "Project deleted (Mock)"}
+

@@ -69,17 +69,21 @@ def safe_convert_step_to_stl(input_path: str, output_path: str):
         except: pass
 
 @router.post("/upload")
-async def upload_geometry(file: UploadFile = File(...)):
-    logger.info(f"Received file upload: {file.filename}")
+async def upload_geometry(
+    file: UploadFile = File(...),
+    project_id: str = Form(None), # Optional for now to support legacy/wizard
+    db = Depends(get_db)
+):
+    logger.info(f"Received file upload: {file.filename} for Project: {project_id}")
     
-    # Max upload size: 15MB (Strict safety for free tier RAM during meshing)
+    # Max upload size: 15MB
     MAX_FILE_SIZE_MB = 15
     file.file.seek(0, 2)
     file_size = file.file.tell()
     file.file.seek(0)
     
     if file_size > MAX_FILE_SIZE_MB * 1024 * 1024:
-            raise HTTPException(status_code=413, detail=f"File too large ({file_size/1024/1024:.1f}MB). Max size {MAX_FILE_SIZE_MB}MB for Free Tier.")
+            raise HTTPException(status_code=413, detail=f"File too large ({file_size/1024/1024:.1f}MB). Max size {MAX_FILE_SIZE_MB}MB.")
 
     # Use TemporaryDirectory for automatic cleanup
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -128,9 +132,9 @@ async def upload_geometry(file: UploadFile = File(...)):
             }
         except Exception as e:
             logger.error(f"Mesh analysis failed: {e}")
-            geometry_stats = {"error": str(e)}
+            raise HTTPException(status_code=422, detail=f"Geometry Analysis Failed: {str(e)}")
 
-        # Persist to Static Directory
+        # Persist to Static Directory (Mocking S3)
         static_dir = "static"
         os.makedirs(static_dir, exist_ok=True)
         final_filename = f"model_{uuid.uuid4().hex[:8]}.stl"
@@ -141,11 +145,31 @@ async def upload_geometry(file: UploadFile = File(...)):
         except Exception as e:
             logger.error(f"Failed to move file to static: {e}")
             raise HTTPException(status_code=500, detail="File storage failed")
+        
+        file_url = f"/static/{final_filename}"
+
+        # DB Insertion (If Project ID provided)
+        part_id = str(uuid.uuid4())
+        if project_id:
+            logger.info(f"Linking geometry to Project {project_id}")
+            part_record = {
+                "id": part_id,
+                "project_id": project_id,
+                "file_url": file_url,
+                "file_name": file.filename,
+                "volume": geometry_stats["volume_mm3"],
+                "projected_area": geometry_stats["projected_area_mm2"],
+                "bbox_x": geometry_stats["bbox"]["x"],
+                "bbox_y": geometry_stats["bbox"]["y"],
+                "bbox_z": geometry_stats["bbox"]["z"]
+            }
+            db.table("parts").insert(part_record).execute()
 
         logger.info(f"Upload successful: {final_filename}")
         return {
-            "url": f"/static/{final_filename}",
+            "url": file_url,
             "filename": final_filename,
+            "part_id": part_id,
             "stats": geometry_stats
         }
 

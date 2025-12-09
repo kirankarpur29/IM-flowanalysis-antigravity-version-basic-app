@@ -8,3 +8,5 @@ python-multipart
 jinja2
 trimesh
 gmsh
+supabase==2.0.3
+

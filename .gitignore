@@ -14,6 +14,7 @@ static/model_*.stl
 static/rotated_*.stl
 mold-flow.db
 *.pdf
+backend/mock_db.json
 
 # Editor
 .vscode/

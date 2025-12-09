@@ -1,27 +1,24 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 import os
-from sqlmodel import Session
 
-from backend.database import create_db_and_tables, engine
-from backend.api import materials, machines, geometry, simulation, reports, projects
-from backend import models, preload_data
+from backend.api import geometry, simulation, reports, projects, materials
+
+# Static directory for served files
+os.makedirs("static", exist_ok=True)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_db_and_tables()
-    # Auto-seed database on startup
-    with Session(engine) as session:
-        preload_data.create_materials(session)
-        preload_data.create_machines(session)
-        session.commit()
+    # V2: Mock DB handles seeding internally on load
+    print("🚀 V2 Backend Started (Mock Mode)")
     yield
+    print("🛑 Shutting down")
 
-app = FastAPI(title="Mold Flow Analysis API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(lifespan=lifespan)
 
-# Configure CORS
+# CORS - Allow frontend to communicate
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # In production, replace with specific frontend origin

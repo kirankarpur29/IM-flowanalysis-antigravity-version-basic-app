@@ -1,30 +1,24 @@
+from fastapi import APIRouter, Depends, HTTPException
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Session, select
-from backend.database import get_session
-from backend.models import Material
+from pydantic import BaseModel
+from backend.database import get_db
 
 router = APIRouter(prefix="/materials", tags=["materials"])
 
-@router.post("/", response_model=Material)
-def create_material(material: Material, session: Session = Depends(get_session)):
-    session.add(material)
-    session.commit()
-    session.refresh(material)
-    return material
+class MaterialRead(BaseModel):
+    id: str
+    name: str
+    density_g_cm3: float
+    melt_temp_c: float
+    mold_temp_c: float
+    shrinkage: float
 
-@router.get("/", response_model=List[Material])
-def read_materials(
-    offset: int = 0,
-    limit: int = Query(default=100, le=100),
-    session: Session = Depends(get_session)
-):
-    materials = session.exec(select(Material).offset(offset).limit(limit)).all()
-    return materials
-
-@router.get("/{material_id}", response_model=Material)
-def read_material(material_id: int, session: Session = Depends(get_session)):
-    material = session.get(Material, material_id)
-    if not material:
-        raise HTTPException(status_code=404, detail="Material not found")
-    return material
+@router.get("/", response_model=List[MaterialRead])
+def list_materials(db = Depends(get_db)):
+    # Simulating SELECT * FROM materials
+    response = db.table("materials").select("*").execute()
+    
+    if hasattr(response, 'error') and response.error:
+        raise HTTPException(status_code=500, detail=response.error)
+        
+    return response.data
