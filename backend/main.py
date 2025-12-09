@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import os
 
-from backend.api import geometry, simulation, reports, projects, materials
+from backend.api import geometry, simulation, reports, projects, materials, machines
 
 # Static directory for served files
 os.makedirs("static", exist_ok=True)
