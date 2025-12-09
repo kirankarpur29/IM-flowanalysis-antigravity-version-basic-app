@@ -2,7 +2,8 @@ import os
 import tempfile
 import shutil
 import logging
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
+from backend.database import get_db
 import trimesh
 try:
     import gmsh
