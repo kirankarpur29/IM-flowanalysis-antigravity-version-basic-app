@@ -2,8 +2,9 @@ from fastapi import APIRouter, HTTPException, Response, Depends
 from pydantic import BaseModel
 from typing import Dict, List, Optional, Any
 from backend.models_fixed import Material, Machine
-from backend.database import get_session
-from sqlmodel import Session
+from backend.database import get_db
+# Remove SQLModel/get_session dependencies
+# from sqlmodel import Session
 try:
     from weasyprint import HTML
     WEASYPRINT_AVAILABLE = True
@@ -29,10 +30,16 @@ class ReportInput(BaseModel):
     designer_name: str = "Designer"
 
 @router.post("/generate")
-def generate_report(input_data: ReportInput, session: Session = Depends(get_session)):
+def generate_report(input_data: ReportInput, db = Depends(get_db)):
     # Fetch Data
-    material = session.get(Material, input_data.material_id)
-    machine = session.get(Machine, input_data.machine_id) if input_data.machine_id else None
+    # Mock DB Query Logic
+    mat_res = db.table("materials").select("*").eq("id", input_data.material_id).execute()
+    material = mat_res.data[0] if mat_res.data else None
+    
+    machine = None
+    if input_data.machine_id:
+        mach_res = db.table("machines").select("*").eq("id", input_data.machine_id).execute()
+        machine = mach_res.data[0] if mach_res.data else None
     
     if not material:
         raise HTTPException(status_code=404, detail="Material not found")
@@ -78,8 +85,8 @@ def generate_report(input_data: ReportInput, session: Session = Depends(get_sess
             <table>
                 <tr><th>Project Name</th><td>{input_data.project_name}</td></tr>
                 <tr><th>Designer</th><td>{input_data.designer_name}</td></tr>
-                <tr><th>Material</th><td>{material.name} ({material.family}) - {material.manufacturer}</td></tr>
-                <tr><th>Machine</th><td>{machine.name if machine else "Auto-Selected"}</td></tr>
+                <tr><th>Material</th><td>{material['name']} ({material.get('family', 'Generic')}) - {material.get('manufacturer', 'Generic')}</td></tr>
+                <tr><th>Machine</th><td>{machine['name'] if machine else "Auto-Selected"}</td></tr>
             </table>
         </div>
 

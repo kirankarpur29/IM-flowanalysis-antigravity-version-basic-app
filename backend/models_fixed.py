@@ -2,7 +2,7 @@ from typing import Optional
 from sqlmodel import Field, SQLModel
 
 class Material(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: Optional[str] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     type: str
     family: str
