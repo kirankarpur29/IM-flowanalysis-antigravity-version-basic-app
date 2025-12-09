@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Response, Depends
 from pydantic import BaseModel
 from typing import Dict, List, Optional, Any
-from backend.models import Material, Machine
+from backend.models_fixed import Material, Machine
 from backend.database import get_session
 from sqlmodel import Session
 try:

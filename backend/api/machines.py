@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 from backend.database import get_session
-from backend.models import Machine
+from backend.models_fixed import Machine
 
 router = APIRouter(prefix="/machines", tags=["machines"])
 

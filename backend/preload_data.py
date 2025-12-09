@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 from backend.database import engine, create_db_and_tables
-from backend.models import Material, Machine
+from backend.models_fixed import Material, Machine
 
 def create_materials(session: Session):
     materials = [
